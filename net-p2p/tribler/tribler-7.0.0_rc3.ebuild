@@ -21,6 +21,7 @@ IUSE="+vlc"
 RDEPEND="
 	dev-lang/python:2.7[sqlite]
 	dev-python/apsw
+	dev-python/backports-functools-lru-cache
 	dev-python/cherrypy
 	dev-python/configobj
 	dev-python/decorator
@@ -34,11 +35,12 @@ RDEPEND="
 	dev-python/psutil
 	dev-python/pyasn1
 	dev-python/pycryptodome
-	dev-python/PyQt5[network]
+	dev-python/PyQt5[gui,network,svg,widgets]
 	dev-python/twisted-core
 	dev-python/twisted-web
 	dev-python/wxpython:=
 	dev-libs/openssl:0[-bindist]
+	dev-libs/libsodium
 	net-libs/libtorrent-rasterbar[python]
 	vlc? (
 			media-video/vlc
@@ -68,27 +70,28 @@ src_install() {
 	#Remove the licenses scattered throughout
 	rm Tribler/binary-LICENSE-postfix.txt # GPL-2 LGPL-2.1+ PSF-2.4 openssl wxWinLL-3.1
 
-	dodir /usr/share/doc/${P}
-	cp "${S}/LICENSE" "${D}/usr/share/doc/${P}/LICENSE.txt"
-	cp "${S}/README.rst" "${D}/usr/share/doc/${P}/README.rst"
+	insinto /usr/share/doc/${P}
+	doins LICENSE
+	doins README.rst
 
 	# Upstream does not provide a proper install file, so we install it ourself.
 	echo "Installing shared files..."
 
-	dodir /usr/share/${PN}
-	cp -R "${S}/TriblerGUI" "${D}/usr/share/${PN}" || die "Installation of TriblerGUI failed!"
-	cp -R "${S}/Tribler" "${D}/usr/share/${PN}" || die "Installation of Tribler's shared files failed!"
-	cp "${S}/Tribler/${schemadb}" "${D}/usr/share/${PN}/Tribler" || die "Installation of Tribler's DB failed."
+	insinto /usr/share/${PN}
+	doins -r Tribler || die "Installation of Tribler failed!"
+	doins -r TriblerGUI || die "Installation of TriblerGUI failed!"
+	doins logger.conf
+	doins run_tribler.py
+	doins check_os.py
 
-	cp "logger.conf" "${D}/usr/share/${PN}/"
-	cp "run_tribler.py" "${D}/usr/share/${PN}/"
-	cp "check_os.py" "${D}/usr/share/${PN}/"
-	dodir /usr/share/${PN}/twisted
-	cp -R "${S}/twisted" "${D}/usr/share/${PN}/twisted"
+	insinto /usr/share/${PN}/Tribler
+	doins Tribler/${schemadb} || die "Installation of Tribler's DB failed."
 
-	insinto /usr/bin
-	doins debian/bin/${PN}
-	fperms 0755 /usr/bin/${PN}
+	insinto /usr/share/${PN}/twisted
+	doins -r twisted
+
+	exeinto /usr/bin
+	doexe debian/bin/${PN}
 
 	# Create desktop icon
 	insinto /usr/share/applications
